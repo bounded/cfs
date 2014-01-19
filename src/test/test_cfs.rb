@@ -1,5 +1,6 @@
 require 'test/unit'
-require './cfs.rb'
+require '../cfs_parser.rb'
+require '../cfs.rb'
 
 class TestCFS < Test::Unit::TestCase
   

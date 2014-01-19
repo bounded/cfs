@@ -1,4 +1,5 @@
-require './cfs.rb'
+require './src/cfs_parser.rb'
+require './src/cfs.rb'
 
 input = File.read "input"
 db = CFS::Database.new

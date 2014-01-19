@@ -1,5 +1,4 @@
 require 'set'
-require './cfs_parser.rb'
 
 module CFS
 
