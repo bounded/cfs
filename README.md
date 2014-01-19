@@ -16,7 +16,7 @@ $ cd cfs
 $ ruby main.rb
 ```
 
-The parsed database will be displayed. Type in some filters to see the result. Suggestions: 
+The database defined by "input" will be displayed. Type in some queries and observe their results. Suggestions: 
 * todo
 * projs, finished
 * "The Dawn: of Time", chapter 1
@@ -24,13 +24,13 @@ The parsed database will be displayed. Type in some filters to see the result. S
 How it works
 -------------
 
-This section explains the main ideas behind CFS and describes the syntax to use it.
+This section explains the main ideas behind CFS and describes the syntax that it uses.
 
-A database consists of a set of literals. Literals are atomic pieces of informations such as notes, ideas, URLs, text snippets, names, telephone numbers or file descriptors. 
+First and foremost, a database consists of a set of literals. Literals are atomic pieces of informations such as notes, ideas, URLs, text snippets, names, telephone numbers or file descriptors. 
 
 Each literal can have additional meta-data by specifying an arbitrary number of containers that include it. A container can be interpreted as a "tag". More precisely, it defines a subset of the database. For example, the literal "Do laundry" may be inside the container "todo". 
 
-Specifying more than one container is means specifying the intersection of these containers. Using the last example, "Do laundry" may be included in both "todo" and "tomorrow". In this case, the syntax would look like this:
+Specifying more than one container is equivalent to specifying the intersection of these containers. Using the last example, "Do laundry" may be included in both "todo" and "tomorrow". In this case, the syntax would look like this:
 ```
 todo, tomorrow: Do laundry
 ```
@@ -41,7 +41,7 @@ You can also do something like this:
 novel, chapter 3: A man walked into a bar.
 ```
 
-In this case, the literal "A man walked into a bar." has three containers: "novel", "chapter" and "chapter 3". The last two are created by the blank between "chapter" and "3". It also specifies that "chapter 3" is a subset of "chapter". In this case, you create a strict hierarchy of containers and thus a more complex structure than plain one-dimensional tags.
+In this case, the literal "A man walked into a bar." has three containers: "novel", "chapter" and "chapter 3". The last two are created by the blank between "chapter" and "3". The blank also specifies that "chapter 3" is a subset of "chapter". In this case, you create a strict hierarchy of containers and thus a more complex structure than plain one-dimensional tags.
 
 Using this technique, other types of relationships are possible: 
 * "project alpha": an example of how you could structure your project notes
@@ -50,7 +50,7 @@ Using this technique, other types of relationships are possible:
 
 As you can see in the "input" file, a database is defined by a collection of newline separated definitions of literals of the form 
 ```
-$container1, ..., $containerN: $literal 
+$container1, ... , $containerN: $literal 
 ```
 Querying the database is as intuitive as it gets: Just use the same syntax as you have used to define it, but only specify the containers. For example, use
 ```
