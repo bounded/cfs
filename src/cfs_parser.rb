@@ -1,12 +1,13 @@
 module CFS
   module Parser
     # expects:
-    # a a1, b b1 b2, c, d, e: string
-    # string
+    # a a1, b b1 b2, c, d, e: literal
+    # returns CFS::Literal
     #
-    # you can escape blank, comma and colon by backslash
+    # you can escape blank, comma and colon by using \
     # alternatively, put them into quotes
     def self.parse_l str
+
       t = CFS::Tokenizer::tokenize(str)
 
       if t.length == 1
@@ -14,22 +15,10 @@ module CFS
       end
       
       if (!t.include? :colon) && (!t.include? :comma)
-        return (CFS::Literal.new str.stip)
+        return (CFS::Literal.new str.strip)
       end
 
-      cs = []
-      ci = []
-      t.each {|x|
-        if x == :comma
-          cs << (CFS::Container.new ci) unless ci.empty?
-          ci = []
-        elsif x == :colon
-          break
-        else
-          ci << x
-        end
-      }
-      cs << (CFS::Container.new ci) unless ci.empty?
+      cs = parse_cs str
 
       l = CFS::Literal.new t.last
       l.container = cs
@@ -48,7 +37,7 @@ module CFS
           cs << (CFS::Container.new ci) unless ci.empty?
           ci = []
         elsif x == :colon
-          raise ArgumentError
+          break
         else
           ci << x
         end

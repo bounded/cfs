@@ -1,6 +1,6 @@
 require 'test/unit'
-require '../cfs_parser.rb'
 require '../cfs.rb'
+require '../cfs_parser.rb'
 
 class TestCFS < Test::Unit::TestCase
   
@@ -21,6 +21,9 @@ class TestCFS < Test::Unit::TestCase
     @l.each{|l| 
       @db.add (parse_l l)
     }
+
+    @pc1 = CFS::PseudoContainer.new ["abc", "def"]
+    @pc2 = CFS::PseudoContainer.new ["abcd", "ghdefh"]
   end
 
   def test_db_add
@@ -40,11 +43,35 @@ class TestCFS < Test::Unit::TestCase
     filter_helper "ch 5"
   end
 
+  def test_container_implies
+    a1 = CFS::Parser::parse_cs "foo bar"
+    a2 = CFS::Parser::parse_cs "foo"
+    a1 = a1[0]
+    a2 = a2[0]
+
+    assert(a1.implies? a2)
+  end
+  
+  def test_equal_container
+    a1 = CFS::Parser::parse_cs "foo bar, test"
+    a2 = CFS::Parser::parse_cs "foo bar, test"
+    assert(a1 == a2)
+  end
+
+  def test_pseudo_container_implies
+    assert(@pc2.implies? @pc1)
+    assert(not(@pc1.implies? @pc2))
+  end
+
+  def test_pseudo_container_contains
+    assert(@pc1.contains? (parse_l "before .. abc def .. after"))
+  end
+
   def filter_helper cstr
-    puts "Filter: #{cstr}"
+    # puts "Filter: #{cstr}"
     c = parse_cs cstr
     o = @db.filter c
-    puts o.inspect
+    # puts o.inspect
   end
 
   def parse_l str

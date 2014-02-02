@@ -42,9 +42,8 @@ module CFS
   end
 
   class Literal < String
-
     def initialize str
-      super 
+      super
       @container = []
     end
 
@@ -100,12 +99,54 @@ module CFS
       end
     end
 
-    def to_s
-      map{|x|x.to_s}.join ":"
+    def inspect
+      "#<#{self.class.name} #{to_s}>"
     end
 
-    def inspect
-      "#<CFS::Container #{to_s}>"
+    def depth
+      length
     end
+
+    alias :arr_eql :==
+
+    def ==(o)
+      o.instance_of?(self.class) && arr_eql(o)
+    end
+  end
+
+  # matches all literals that contain all of its elements
+  class PseudoContainer < Container
+    def initialize arr, eql=nil
+      super arr
+      @eql = eql || ->(a, b){a.index b}
+    end
+    
+    def contains? obj
+      if obj.is_a? Container
+        obj.implies? self
+      else
+        raise ArgumentError unless obj.is_a? Literal
+        all? {|s|
+          @eql.call(obj.downcase, s.downcase)
+        }
+      end
+    end
+
+    def implies? c
+      return true if self == c
+      c.each {|x|
+        b = any? {|y|
+          y.index x
+        }
+        return true if b
+      }
+      false
+    end
+  end
+
+  DEBUG = false
+
+  def self.debug str
+    puts str if DEBUG
   end
 end
