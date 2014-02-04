@@ -1,7 +1,6 @@
-require 'pry'
 module CFS
-  module FuzzyParser
-    def self.tokenize str
+  class FuzzyParser
+    def self.tokenize_literals str
       #
       # STAGE 1
       #
@@ -108,11 +107,11 @@ module CFS
           res << bl[0].strip
         when 2
           # a, b c:
-          res += tokenize_cs(bl[0])
+          res += tokenize_literals_cs(bl[0])
           res << :colon
         when 3
           # a, b c: literal
-          res += tokenize_cs(bl[0]) 
+          res += tokenize_literals_cs(bl[0]) 
           res << :colon
           res << bl[2].strip
         end
@@ -132,7 +131,7 @@ module CFS
       end
     end
 
-    def self.tokenize_cs str
+    def self.tokenize_literals_cs str
       str.strip!
 
       tmp = []
@@ -182,6 +181,52 @@ module CFS
       if tmp.last == :comma
         tmp.pop
       end
+      tmp
+    end
+
+    def self.tokenize_containers str
+      tmp = []
+      escape_next = false
+      in_quotes = false
+
+      i = 0
+      c = nil
+      acc = ""
+
+      while i < str.length
+        c = str[i]
+
+        if escape_next 
+          acc += c
+          escape_next = false
+        else
+          case c
+          when '"'
+            in_quotes = !in_quotes
+          when /[\s]/
+            if in_quotes
+              acc += c
+            else
+              unless acc.empty?
+                tmp << acc
+                acc = ""
+              end
+            end
+          when '\\'
+            escape_next = true
+          else
+            acc += c
+          end
+        end
+
+        i += 1
+      end
+
+      unless acc.empty?
+        tmp << acc
+        acc = ""
+      end
+
       tmp
     end
 

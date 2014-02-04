@@ -1,4 +1,5 @@
 require_relative 'cfs.rb'
+require_relative 'cfs_fuzzy_tokenizer.rb'
 require_relative 'cfs_fuzzy_utils.rb'
 
 module CFS
@@ -24,44 +25,48 @@ module CFS
     end
 
     def containers s
+      CFS::debug "\n### FuzzyParser.containers #{s}"
 
-    end
-
-    def literals s
-
-    end
-
-    def query str
-      ks = str.split
-      i = 0
-      c = []
       cs = Set.new
+      c = CFS::Container.new 
 
-      until i == ks.length
+      ks = CFS::FuzzyParser.tokenize_containers s
+      CFS::debug "Tokenized: #{ks.inspect}"
+      i = 0
+
+      while i < ks.length
+        # create new container by adding another keyword
         cn = CFS::Container.new (c + [ks[i]])
 
+        # check whether this matches an existing container
         CFS::debug "match #{cn.inspect}"
-        ms = fuzzy_match_c cn
+        ms = CFS::Container.fuzzy_match_c cn, @info[:cs]
         CFS::debug "result: #{ms}"
 
         if ms.empty?
+          # CASE 1: No matches
           if cn.length == 1
-            sup_cs = fuzzy_super_c ks[i]
+            # CASE 1.1: Only one keyword $kw
+            
+            # CASE 1.1.1: check for a container $c1 ... $cn $kw
+            sup_cs = CFS::Container.fuzzy_super_c ks[i], @info[:cs]
             CFS::debug "Possible super containers: #{sup_cs}."
             
             if sup_cs.length == 1
               CFS::debug "Use container #{sup_cs[0]}." 
               c = sup_cs[0]
             else
+              # CASE 1.1.2: create PseudoContainer for $kw
               CFS::debug "Ambiguous result. Create PseudoContainer #{ks[i]}." 
               ps_c = CFS::PseudoContainer.new([ks[i]]) 
               # TODO
               # use fuzzy_include?
-              cs <<  ps_c
+              cs << ps_c
               CFS::debug "Add #{ps_c.inspect}"
               c = []
             end
           else
+            # CASE 1.2: backtrack and use the last successful container
             cs << c
             CFS::debug "add #{c.inspect}"
             c = []
@@ -69,10 +74,13 @@ module CFS
             i -= 1
           end
         elsif ms.length > 1
+          # CASE 2: More than one match
+          # Inform the user and take the best match
           CFS::debug "Ambiguous input #{ks[i]}."
           CFS::debug "Choose #{ms[0].inspect}."
           c = ms[0]
         else
+          # CASE 3: One match
           c = ms[0]
         end
 
@@ -87,5 +95,8 @@ module CFS
       cs
     end
 
+    def literals s
+
+    end
   end
 end

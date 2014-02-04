@@ -4,7 +4,7 @@ module CFS
   class Container
 
     def fuzzy_implies?(o)
-      CFS::debug "#{self.inspect}.fuzzy_implies? #{o.inspect}"
+      CFS::debug "#{self}.fuzzy_implies? #{o}"
 
       return true if implies?(o)
       return false unless depth >= o.depth

@@ -3,7 +3,7 @@ require '../cfs_fuzzy_tokenizer.rb'
 
 module TestCFSTokenizerHelper
   def assert_tokenize exp, input
-    assert_equal(exp, CFS::FuzzyParser.tokenize(input))
+    assert_equal(exp, CFS::FuzzyParser.tokenize_literals(input))
   end
 end
 
@@ -94,10 +94,10 @@ END
     str = <<END
 tag1, "Long \\"Tag", oth"e"r tag: here ""\\"are \\\\some
 literals\\
-
+  
 multiline yeah!
 END
-    arr = ['tag1', :comma, "Long \"Tag", :comma, 'other', 'tag', :colon, "here \"\"\"are \\some\nliterals\n\nmultiline yeah!"]
+    arr = ['tag1', :comma, "Long \"Tag", :comma, 'other', 'tag', :colon, "here \"\"\"are \\some\nliterals\n  \nmultiline yeah!"]
     assert_tokenize arr, str
   end
 
@@ -177,4 +177,34 @@ END
     arr = ['Some literal',:break, 'these', :comma, 'are', :colon, 'tags']
     assert_tokenize(arr, str)
   end
+end
+
+class TestCFSTokenizerContainers < Test::Unit::TestCase
+
+  def test_simple
+    str = 'some easy query'
+    arr = ['some', 'easy', 'query']
+    assert_literals arr, str
+
+    str = "now with newline\n"
+    arr = ['now', 'with', 'newline']
+    assert_literals arr, str
+
+    str = 'tr"y" "s"o"me" "qu otes"'
+    arr = ['try', 'some', 'qu otes']
+    assert_literals arr, str
+
+    str = "now\\ with\\ \\\"a \\\\bunch of es\\\"capes"
+    arr = ['now with "a', '\\bunch', 'of', 'es"capes']
+    assert_literals arr, str
+
+    str = "   and  some\\  \\ ex tra  spaces \\ "
+    arr = ['and', 'some ', ' ex', 'tra', 'spaces', ' ']
+    assert_literals arr, str
+  end
+
+  def assert_literals exp, input
+    assert_equal(exp, CFS::FuzzyParser.tokenize_containers(input))
+  end
+
 end
