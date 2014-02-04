@@ -3,17 +3,6 @@ require '../cfs_fuzzy_parser.rb'
 
 class TestCFSTokenizer < Test::Unit::TestCase
   
-  def test_1
-    # test: one tag and one literal in new line with break
-    str = <<END
-tag1:
-
-Some literal.
-END
-    arr = ['tag1', :colon, :break, 'Some literal.']
-    assert_tokenize(arr, str)
-  end
-
   def test_tokenize
     str = 'a a1, b b1 b2, c: "k"'
     arr = ["a", "a1", :comma, "b", "b1", "b2", :comma, "c", :colon, "k"]    
@@ -92,7 +81,28 @@ Some literal
 END
     arr = ['Some literal']
     assert_tokenize(arr, str)
+     
+    # test: no newline at the end
+    str = <<END
+Some literal
+  
+these aren't \:tags
+END
+    # remove newline
+    str = str[0..str.length-2]
+    arr = ['Some literal',:break, 'these aren\'t \\:tags']
+    assert_tokenize(arr, str)
 
+    # test: no newline at the end, with tags
+    str = <<END
+Some literal
+  
+these, are: tags
+END
+    # remove newline
+    str = str[0..str.length-2]
+    arr = ['Some literal',:break, 'these', :comma, 'are', :colon, 'tags']
+    assert_tokenize(arr, str)
     # test :break
     str = <<END
 

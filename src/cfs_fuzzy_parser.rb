@@ -41,6 +41,10 @@ module CFS
       c = nil
       i = 0
 
+      if str[str.length-1] != "\n"
+        str += "\n"
+      end
+
       while i < str.length
         c = str[i]
 
@@ -93,7 +97,6 @@ module CFS
             if ((!tmp.empty? && tmp.last != :break) or acc != "") 
               
               # STEP 1: Check if the current line was unnecessarily parsed
-              
               # get current line
               prev_break = tmp.rindex :break
               if prev_break != nil
@@ -106,10 +109,16 @@ module CFS
               if not cl.empty? and not cl.include? :colon
                 tmp.pop cl.length
                 last_nl = i-1
-                until (last_nl == 0 or str[last_nl] == "\n")
+                loop do
+                  if str[last_nl] == "\n"
+                    acc = str[(last_nl+1)..(i-1)]
+                    break
+                  elsif last_nl == 0
+                    acc = str[0..(i-1)]
+                    break
+                  end
                   last_nl -= 1 
                 end
-                acc = str[last_nl..(i-1)]
                 in_literal = true
               end
 
@@ -148,7 +157,6 @@ module CFS
               end
             end
           end
-          binding.pry
         else
           acc += c
           if tmp.last == :colon
@@ -159,7 +167,10 @@ module CFS
         i += 1
       end
 
-      tmp << acc if acc != ""
+      if acc != ""
+        tmp << acc 
+      end
+
       tmp
     end
   end

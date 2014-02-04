@@ -6,12 +6,12 @@ def test_1
   str = <<END
 tag1:
 
-Some literal.
+l b
 END
-  arr = ['tag1', :colon, :break, 'Some literal.']
+  arr = ['t', :colon, :break, 'l']
   assert_tokenize(arr, str)
-  end
+end
 
-  def assert_tokenize exp, input
-    assert_equal(exp, CFS::FuzzyParser.tokenize(input))
-  end
+def assert_tokenize exp, input
+  assert_equal(exp, CFS::FuzzyParser.tokenize(input))
+end
