@@ -1,5 +1,8 @@
-module CFS
+require 'pry'
+require_relative 'cfs.rb'
+require_relative 'cfs_fuzzy_utils.rb'
 
+module CFS
   class FuzzyParser
     def initialize db
       @db = db
@@ -9,7 +12,7 @@ module CFS
     def process_db
       cs = []
       @db.each { |l|
-        cs = cs.concat l.container
+        cs += l.container
       }
       cs.delete_if {|x|
         cs.any? {|y|
@@ -21,139 +24,143 @@ module CFS
       }
     end
 
-    # returns: set of Container
-    def query str
-      ks = str.split
+    def containers s
+
+    end
+
+    def literals s
+
+    end
+
+    def self.tokenize str
+      tmp = []
+      acc = ""
+      in_quotes = false
+      escape_next = false
+      in_literal = false
+      c = nil
       i = 0
-      c = []
-      cs = Set.new
 
-      until i == ks.length
-        cn = CFS::Container.new (c + [ks[i]])
+      while i < str.length
+        c = str[i]
 
-        CFS::debug "match #{cn.inspect}"
-        ms = fuzzy_match_c cn
-        CFS::debug "result: #{ms}"
+        if escape_next
+          acc += c
+          escape_next = false
+          i += 1
+          next
+        end
 
-        if ms.empty?
-          if cn.length == 1
-            sup_cs = fuzzy_super_c ks[i]
-            CFS::debug "Possible super containers: #{sup_cs}."
-            
-            if sup_cs.length == 1
-              CFS::debug "Use container #{sup_cs[0]}." 
-              c = sup_cs[0]
-            else
-              CFS::debug "Ambiguous result. Create PseudoContainer #{ks[i]}." 
-              ps_c = CFS::PseudoContainer.new([ks[i]]) 
-              # TODO
-              # use fuzzy_include?
-              cs <<  ps_c
-              CFS::debug "Add #{ps_c.inspect}"
-              c = []
-            end
+        case c
+        when ','
+          if !in_quotes && !in_literal
+            tmp << acc if acc != ""
+            acc = ""
+            tmp << :comma
           else
-            cs << c
-            CFS::debug "add #{c.inspect}"
-            c = []
-            # process the current keyword again
-            i -= 1
+            acc += c
           end
-        elsif ms.length > 1
-          CFS::debug "Ambiguous input #{ks[i]}."
-          CFS::debug "Choose #{ms[0].inspect}."
-          c = ms[0]
+        when ':'
+          if in_quotes or in_literal
+            acc += c
+          else
+            tmp << acc if acc != ""
+            acc = ""
+            tmp << :colon
+          end
+        when '"'
+          in_quotes = !in_quotes
+        when /[ \t]/
+          if in_quotes or in_literal
+            acc += c
+          else
+            if acc != ""
+              if tmp.last == :colon
+                acc += c
+              else
+                tmp << acc
+                acc = ""
+              end
+            end
+          end
+        when '\\'
+          escape_next = true
+        when "\n"
+          if in_quotes
+            acc += c
+          else
+            # if the current line is non-empty
+            if ((!tmp.empty? && tmp.last != :break) or acc != "") 
+              
+              # STEP 1: Check if the current line was unnecessarily parsed
+              
+              # get current line
+              prev_break = tmp.rindex :break
+              if prev_break != nil
+                cl = tmp[(prev_break + 1)..(tmp.length-1)]
+              else
+                cl = tmp
+              end
+
+              # if the parsed objects should not have been parsed
+              if not cl.empty? and not cl.include? :colon
+                tmp.pop cl.length
+                last_nl = i-1
+                until (last_nl == 0 or str[last_nl] == "\n")
+                  last_nl -= 1 
+                end
+                acc = str[last_nl..(i-1)]
+                in_literal = true
+              end
+
+              # STEP 2: check the next lines
+              next_char = str.index /[^ \t\n]/, (i+1)
+
+              # if only whitespace follows
+              if next_char == nil
+                tmp << acc if acc != ""
+                # no break after the last literal
+                return tmp
+              else
+                if str[(i+1)..(next_char-1)].include? "\n"
+                  # separation between two literals
+                  # such as:
+                  # a, b: literal1
+                  #
+                  # literal2
+                  tmp << acc if acc != ""
+                  tmp << :break
+
+                  acc = ""
+                  in_literal = false
+                else
+                  # no separator
+                  # e.g.:
+                  # "a: start\n end"
+                  if in_literal
+                    acc += "\n"
+                  else 
+                    # e.g.:
+                    # "a: \n start and end"
+                    in_literal = true
+                  end
+                end
+              end
+            end
+          end
+          binding.pry
         else
-          c = ms[0]
-        end
-
-        i += 1
-      end
-
-      unless c.empty?
-        cs << c 
-        CFS::debug "add #{c.inspect}"
-      end
-
-      cs
-    end
-
-    def fuzzy_super_c c_str
-      cs = []
-      @info[:cs].each {|x|
-        x.each_with_index {|x_i, i|
-          if x_i.fuzzy_eql? c_str
-            cs << x[0..i]
+          acc += c
+          if tmp.last == :colon
+            in_literal = true
           end
-        }
-      }
-      cs
-    end
-
-    def fuzzy_match_c c
-      return [c] if @info[:cs].any? {|x| x.implies? c}
-      @info[:cs].select{|x| x.fuzzy_implies? c}
-      # TODO sort
-    end
-  end
-
-  class Container
-    def fuzzy_implies?(o)
-      CFS::debug "#{self.inspect}.fuzzy_implies? #{o.inspect}"
-      return true if implies?(o)
-      return false unless depth >= o.depth
-
-      i = 0
-      i += 1 while self[i] == o[i]
-
-      until i == self.length
-        break unless o[i]
-
-        is_prefix = self[i].index(o[i]) == 0
-        is_fuzzy = self[i].fuzzy_eql? o[i]
-        unless is_prefix or is_fuzzy
-          return false
         end
+
         i += 1
       end
 
-      true
+      tmp << acc if acc != ""
+      tmp
     end
-  end
-end
-
-class String
-  def fuzzy_eql?(o)
-    if self == o
-      true
-    else
-      return false if self[0] != o[0]
-
-      # difference between letter frequency at most 1
-      h1 = self.char_freq
-      h2 = o.char_freq
-
-      (h1.keys + h2.keys).each {|k|
-        f1 = h1[k] || 0
-        f2 = h2[k] || 0
-        return false if ((f1 - f2).abs > 1)
-      }
-      true
-    end
-  end
-
-  def fuzzy_include?(o)
-  end
-
-  def char_freq
-    h = {}
-    each_char {|c|
-      if h[c]
-        h[c] += 1
-      else
-        h[c] = 1
-      end
-    }
-    h
   end
 end

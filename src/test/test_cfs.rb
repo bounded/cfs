@@ -44,8 +44,8 @@ class TestCFS < Test::Unit::TestCase
   end
 
   def test_container_implies
-    a1 = CFS::Parser::parse_cs "foo bar"
-    a2 = CFS::Parser::parse_cs "foo"
+    a1 = parse_cs "foo bar"
+    a2 = parse_cs "foo"
     a1 = a1[0]
     a2 = a2[0]
 
@@ -53,8 +53,8 @@ class TestCFS < Test::Unit::TestCase
   end
   
   def test_equal_container
-    a1 = CFS::Parser::parse_cs "foo bar, test"
-    a2 = CFS::Parser::parse_cs "foo bar, test"
+    a1 = parse_cs "foo bar, test"
+    a2 = parse_cs "foo bar, test"
     assert(a1 == a2)
   end
 
@@ -75,11 +75,11 @@ class TestCFS < Test::Unit::TestCase
   end
 
   def parse_l str
-    CFS::Parser::parse_l str
+    CFS::FuzzyParser::parse_l str
   end
 
   def parse_cs str
-    CFS::Parser::parse_cs str
+    CFS::FuzzyParser::parse_cs str
   end
 
 end

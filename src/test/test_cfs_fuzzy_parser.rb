@@ -1,6 +1,4 @@
 require 'test/unit'
-require '../cfs.rb'
-require '../cfs_parser.rb'
 require '../cfs_fuzzy_parser.rb'
 
 class TestCFSFuzzyParser < Test::Unit::TestCase
@@ -14,7 +12,7 @@ class TestCFSFuzzyParser < Test::Unit::TestCase
     @parser = CFS::FuzzyParser.new @db
   end
 
-  def test_1
+  def test_containers
     # exact matches
     assert_query_parser([["tag1"]], "tag1")
     assert_query_parser([["tag1"], ["tag2"]], "tag1 tag2")
@@ -29,27 +27,6 @@ class TestCFSFuzzyParser < Test::Unit::TestCase
     # automatically find super containers
     assert_query_parser([["tag3", "subtag31"]], "sub")
     
-  end
-
-  def test_fuzzy_eql?
-    t = [
-      ["tg1", "tag1"],
-      ["marmalade", "mamalade"],
-      ["foo", "foo"]
-    ]
-
-    t_n = [
-      ["foo", "bar"],
-      ["test", "es"]
-    ]
-    
-    t.each {|x|
-      assert(x[0].fuzzy_eql?(x[1]), "#{x[0]}.fuzzy_eql? #{x[1]} != true")
-    }
-
-    t_n.each {|x|
-      assert(!x[0].fuzzy_eql?(x[1]), "#{x[0]}.fuzzy_eql? #{x[1]} == true")
-    }
   end
 
   def assert_query_parser exp, input
