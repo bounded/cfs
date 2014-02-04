@@ -1,4 +1,3 @@
-require 'pry'
 require_relative 'cfs.rb'
 require_relative 'cfs_fuzzy_utils.rb'
 
@@ -32,7 +31,8 @@ module CFS
 
     end
 
-    def self.tokenize str
+
+    def self.tokenize_XXX str
       tmp = []
       acc = ""
       in_quotes = false
