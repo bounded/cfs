@@ -95,8 +95,48 @@ module CFS
       cs
     end
 
+    # returns CFS::Database
     def literals s
+      tks = CFS::FuzzyParser.tokenize_literals s
+      r = CFS::Database.new
 
+      top_cs = []
+
+      tks.split(:break).each {|bl|
+        if bl.length == 1
+          # literal
+          
+          l = CFS::Literal.new bl[0]
+          l.containers = top_cs
+          r.add l
+        else 
+          # tag1, tag2:
+          # or 
+          # tag1, tag2: literal
+          
+          l = bl.pop
+          if l == :colon
+            l = nil
+          else
+            l = CFS::Literal.new l
+            bl.pop
+          end
+
+          bl.split(:comma).each {|c|
+            # TODO
+            c = CFS::Container.new c
+            if l 
+              l.add c
+            else
+              top_cs << c
+            end
+          }
+
+          r.add l if l
+        end
+      }
+
+      r
     end
   end
 end

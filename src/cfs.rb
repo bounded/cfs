@@ -39,6 +39,16 @@ module CFS
     def inspect
       map{|x| x.inspect }.join "\n"
     end
+
+    def self.by_hash h
+      r = CFS::Database.new
+      h.each_pair {|k, v|
+        l = CFS::Literal.new k
+        l.container = v.map{|x| CFS::Container.new x}
+        r.add l
+      }
+      r
+    end
   end
 
   class Literal < String
@@ -148,5 +158,16 @@ module CFS
 
   def self.debug str
     puts str if DEBUG
+  end
+end
+
+class Array
+  def split obj
+    i = index obj
+    if i == nil
+      [self]
+    else
+      [self[0..i-1]] + self[i+1..-1].split(obj)
+    end
   end
 end

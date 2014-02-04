@@ -1,3 +1,5 @@
+require_relative 'cfs.rb'
+
 module CFS
   class FuzzyParser
     def self.tokenize_literals str
@@ -90,7 +92,6 @@ module CFS
         end
         i += 1
       end
-
       tmp << acc unless acc.empty?
 
       #
@@ -100,7 +101,7 @@ module CFS
       res = []
       return res if tmp.empty?
 
-      split_by_break(tmp).each {|bl|
+      tmp.split(:break).each {|bl|
         case bl.length
         when 1
           # literal
@@ -120,15 +121,6 @@ module CFS
       res.pop
 
       res
-    end
-
-    def self.split_by_break arr
-      i = arr.index :break
-      if i == nil
-        [arr]
-      else
-        [arr[0..(i-1)]] + (split_by_break arr[(i+1)..(arr.length-1)])
-      end
     end
 
     def self.tokenize_literals_cs str

@@ -1,6 +1,7 @@
 require 'test/unit'
 require '../cfs.rb'
-require '../cfs_parser.rb'
+require '../cfs_fuzzy_tokenizer.rb'
+require '../cfs_fuzzy_parser.rb'
 
 class TestCFS < Test::Unit::TestCase
   
@@ -75,11 +76,11 @@ class TestCFS < Test::Unit::TestCase
   end
 
   def parse_l str
-    CFS::FuzzyParser::parse_l str
+    CFS::FuzzyParser.literals str
   end
 
   def parse_cs str
-    CFS::FuzzyParser::parse_cs str
+    CFS::FuzzyParser.containers str
   end
 
 end

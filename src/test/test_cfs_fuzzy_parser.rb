@@ -3,15 +3,14 @@ require '../cfs_fuzzy_parser.rb'
 
 class TestCFSFuzzyParserContainers < Test::Unit::TestCase
   def setup
-    @db = CFS::Database.new
-    l = CFS::Literal.new "l1"
-    l.container = [
-      CFS::Container.new(["tag1"]),
-      CFS::Container.new(["tag2"]),
-      CFS::Container.new(["tag3", "subtag31"]),
-      CFS::Container.new(["with quotes", "sub \"test\""])
-    ]
-    @db.add l
+    @db = CFS::Database.by_hash ({
+      "l1" => ([
+        ["tag1"],
+        ["tag2"],
+        ["tag3", "subtag31"],
+        ["with quotes", 'sub "test"'],
+       ])
+    })
 
     @parser = CFS::FuzzyParser.new @db
   end
@@ -35,11 +34,47 @@ class TestCFSFuzzyParserContainers < Test::Unit::TestCase
     str = 'no\\ match "pseudo contain"er "with quotes" "s \\"tst'
     arr = [["no match"], ["pseudo container"], ["with quotes", "sub \"test\""]]
     assert_containers( arr, str )  
-    
   end
 
   def assert_containers exp, input
     assert_equal(Set.new(exp), @parser.containers(input))
   end
 
+end
+
+class TestCFSFuzzyParserLiterals < Test::Unit::TestCase
+
+  def setup
+    @parser = CFS::FuzzyParser.new (CFS::Database.new [])
+  end
+
+  def test_simple
+    str = <<END
+super_tag1:
+
+tag1, tag2:
+Some literal.
+
+tag2, tag3:
+Some literal.
+
+tag4:
+Another one.
+END
+    db = {
+      "Some literal." => [
+        ["tag1"],
+        ["tag2"],
+        ["tag3"]
+    ],
+      "Another one." => [
+        ["tag4"]
+    ]
+    }
+    assert_literals db, str
+end
+
+  def assert_literals exp, input
+    assert_equal(CFS::Database.by_hash(exp), @parser.literals(input))
+  end
 end
