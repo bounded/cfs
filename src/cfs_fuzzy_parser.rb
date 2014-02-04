@@ -31,147 +31,61 @@ module CFS
 
     end
 
-
-    def self.tokenize_XXX str
-      tmp = []
-      acc = ""
-      in_quotes = false
-      escape_next = false
-      in_literal = false
-      c = nil
+    def query str
+      ks = str.split
       i = 0
+      c = []
+      cs = Set.new
 
-      if str[str.length-1] != "\n"
-        str += "\n"
-      end
+      until i == ks.length
+        cn = CFS::Container.new (c + [ks[i]])
 
-      while i < str.length
-        c = str[i]
+        CFS::debug "match #{cn.inspect}"
+        ms = fuzzy_match_c cn
+        CFS::debug "result: #{ms}"
 
-        if escape_next
-          acc += c
-          escape_next = false
-          i += 1
-          next
-        end
-
-        case c
-        when ','
-          if !in_quotes && !in_literal
-            tmp << acc if acc != ""
-            acc = ""
-            tmp << :comma
-          else
-            acc += c
-          end
-        when ':'
-          if in_quotes or in_literal
-            acc += c
-          else
-            tmp << acc if acc != ""
-            acc = ""
-            tmp << :colon
-          end
-        when '"'
-          in_quotes = !in_quotes
-        when /[ \t]/
-          if in_quotes or in_literal
-            acc += c
-          else
-            if acc != ""
-              if tmp.last == :colon
-                acc += c
-              else
-                tmp << acc
-                acc = ""
-              end
+        if ms.empty?
+          if cn.length == 1
+            sup_cs = fuzzy_super_c ks[i]
+            CFS::debug "Possible super containers: #{sup_cs}."
+            
+            if sup_cs.length == 1
+              CFS::debug "Use container #{sup_cs[0]}." 
+              c = sup_cs[0]
+            else
+              CFS::debug "Ambiguous result. Create PseudoContainer #{ks[i]}." 
+              ps_c = CFS::PseudoContainer.new([ks[i]]) 
+              # TODO
+              # use fuzzy_include?
+              cs <<  ps_c
+              CFS::debug "Add #{ps_c.inspect}"
+              c = []
             end
-          end
-        when '\\'
-          escape_next = true
-        when "\n"
-          if in_quotes
-            acc += c
           else
-            # if the current line is non-empty
-            if ((!tmp.empty? && tmp.last != :break) or acc != "") 
-              
-              # STEP 1: Check if the current line was unnecessarily parsed
-              # get current line
-              prev_break = tmp.rindex :break
-              if prev_break != nil
-                cl = tmp[(prev_break + 1)..(tmp.length-1)]
-              else
-                cl = tmp
-              end
-
-              # if the parsed objects should not have been parsed
-              if not cl.empty? and not cl.include? :colon
-                tmp.pop cl.length
-                last_nl = i-1
-                loop do
-                  if str[last_nl] == "\n"
-                    acc = str[(last_nl+1)..(i-1)]
-                    break
-                  elsif last_nl == 0
-                    acc = str[0..(i-1)]
-                    break
-                  end
-                  last_nl -= 1 
-                end
-                in_literal = true
-              end
-
-              # STEP 2: check the next lines
-              next_char = str.index /[^ \t\n]/, (i+1)
-
-              # if only whitespace follows
-              if next_char == nil
-                tmp << acc if acc != ""
-                # no break after the last literal
-                return tmp
-              else
-                if str[(i+1)..(next_char-1)].include? "\n"
-                  # separation between two literals
-                  # such as:
-                  # a, b: literal1
-                  #
-                  # literal2
-                  tmp << acc if acc != ""
-                  tmp << :break
-
-                  acc = ""
-                  in_literal = false
-                else
-                  # no separator
-                  # e.g.:
-                  # "a: start\n end"
-                  if in_literal
-                    acc += "\n"
-                  else 
-                    # e.g.:
-                    # "a: \n start and end"
-                    in_literal = true
-                  end
-                end
-              end
-            end
+            cs << c
+            CFS::debug "add #{c.inspect}"
+            c = []
+            # process the current keyword again
+            i -= 1
           end
+        elsif ms.length > 1
+          CFS::debug "Ambiguous input #{ks[i]}."
+          CFS::debug "Choose #{ms[0].inspect}."
+          c = ms[0]
         else
-          acc += c
-          if tmp.last == :colon
-            in_literal = true
-          end
+          c = ms[0]
         end
 
         i += 1
       end
 
-      if acc != ""
-        tmp << acc 
+      unless c.empty?
+        cs << c 
+        CFS::debug "add #{c.inspect}"
       end
 
-      tmp
+      cs
     end
+
   end
 end
