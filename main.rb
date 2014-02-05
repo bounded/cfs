@@ -1,3 +1,4 @@
+require './src/cfs_ioparser.rb'
 require './src/cfs_fuzzy_parser.rb'
 
 if ARGV.length == 0
@@ -15,7 +16,7 @@ rescue
   exit
 end
 
-db = (CFS::FuzzyParser.new).literals db_data
+db = CFS::IOParser.read db_data
 parser = CFS::FuzzyParser.new db
 
 # Check switches
@@ -25,8 +26,8 @@ unless ["q", "a", "e"].include? switch
   exit
 end
 
-# Get query (if available)
-query = ARGV[2..-1].join " " if ARGV.length > 2
+# Get query 
+query = ARGV[2]
 
 case switch
 when "a"
@@ -35,18 +36,42 @@ when "a"
     exit
   end
 
+  puts "Enter data:"
+  rpl = ""
+  f = ""
+  rpl += f while f = $stdin.gets
+  rpl_db = parser.literals rpl
+
+  db += rpl_db
+
+  File.open(db_path, "w") {|f|
+    f.print (CFS::IOParser.write db)
+  }
+
 when "q"
   unless query
-    puts "Enter query:"
-    query = gets.chomp.strip
+    puts "Switch [q]uery needs a query."
+    exit
   end
-
+  puts db.filter(parser.containers query)
   
 when "e"
   unless query
-    puts "Enter query:"
-    query = gets.chomp.strip
+    puts "Switch [e]dit needs a query."
+    exit
   end
 
+  db -= db.filter(parser.containers query)
+
   puts "Enter replacement:"
+  rpl = ""
+  f = ""
+  rpl += f while f = $stdin.gets
+  rpl_db = parser.literals rpl
+
+  db += rpl_db
+
+  File.open(db_path, "w") {|f|
+    f.print (CFS::IOParser.write db)
+  }
 end

@@ -2,6 +2,8 @@ require 'set'
 
 module CFS
 
+  WHITESPACE = /[ \t]/
+
   class Database < Set
     alias :set_add :add
     def add obj
@@ -18,7 +20,7 @@ module CFS
       unless lit
         set_add obj
       else
-        obj.container.each {|c| lit.add c}
+        obj.containers.each {|c| lit.add c}
       end
     end
 
@@ -33,7 +35,7 @@ module CFS
 
     def to_s
       # TODO: tree
-      map{|x| x.to_s + " " + x.container_s }.join "\n"
+      map{|x| x.to_s + " " + x.containers_s }.join "\n"
     end
 
     def inspect
@@ -44,7 +46,7 @@ module CFS
       r = CFS::Database.new
       h.each_pair {|k, v|
         l = CFS::Literal.new k
-        l.container = v.map{|x| CFS::Container.new x}
+        l.containers = v.map{|x| CFS::Container.new x}
         r.add l
       }
       r
@@ -54,36 +56,36 @@ module CFS
   class Literal < String
     def initialize str
       super
-      @container = []
+      @containers = Set.new
     end
 
     def inspect
-      "#<CFS::Literal \"#{to_s}\", [#{@container.map{|x|x.to_s}.join ", "}]>"
+      "#<CFS::Literal \"#{self}\", [#{@containers.map{|x|x.to_s}.join ", "}]>"
     end
 
     def add c
-      @container << c if @container.all? {|x| !(x.implies? c)}
+      @containers << c if @containers.all? {|x| !(x.implies? c)}
     end
 
     def in? c
       c.contains? self 
     end
 
-    def container= c
-      @container = []
+    def containers= c
+      @containers = Set.new
       c.each{|x| add x}
     end
 
-    def container
-      @container
+    def containers
+      @containers
     end
 
-    def container_s
-      "[" + @container.map{|c| c.to_s}.join(", ") + "]"
+    def containers_s
+      "[" + @containers.map{|c| c.to_s}.join(", ") + "]"
     end
 
     def eql?(o)
-      self == o && container == o.container
+      self == o && containers == o.containers
     end
   end
 
@@ -93,7 +95,7 @@ module CFS
         obj.implies? self
       else
         raise ArgumentError unless obj.is_a? Literal
-        obj.container.any? {|x|
+        obj.containers.any? {|x|
           x.implies? self 
         }
       end

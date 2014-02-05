@@ -12,7 +12,7 @@ module CFS
     def process_db
       cs = []
       @db.each { |l|
-        cs += l.container
+        cs += l.containers.to_a
       }
       cs.delete_if {|x|
         cs.any? {|y|
@@ -105,7 +105,7 @@ module CFS
           # literal
           
           l = CFS::Literal.new bl[0]
-          l.containers = top_cs
+          l.container = top_cs
           r.add l
         else 
           # tag1, tag2:

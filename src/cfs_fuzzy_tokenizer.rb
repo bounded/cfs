@@ -42,7 +42,7 @@ module CFS
           when '\\'
             escape_next = true
             acc += c unless after_colon
-          when /[ \t]/
+          when WHITESPACE
             acc += c unless acc.empty?
           when "\n"
             if in_quotes
@@ -108,11 +108,11 @@ module CFS
           res << bl[0].strip
         when 2
           # a, b c:
-          res += tokenize_literals_cs(bl[0])
+          res += strict_tokenize_literals_cs(bl[0])
           res << :colon
         when 3
           # a, b c: literal
-          res += tokenize_literals_cs(bl[0]) 
+          res += strict_tokenize_literals_cs(bl[0]) 
           res << :colon
           res << bl[2].strip
         end
@@ -123,7 +123,7 @@ module CFS
       res
     end
 
-    def self.tokenize_literals_cs str
+    def self.strict_tokenize_literals_cs str
       str.strip!
 
       tmp = []
@@ -150,7 +150,7 @@ module CFS
               tmp << :comma
               acc = ""
             end
-          when /[ \t]/
+          when WHITESPACE
             if in_quotes
               acc += c
             elsif !acc.empty?

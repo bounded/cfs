@@ -28,10 +28,10 @@ class TestCFSFuzzyParserContainers < Test::Unit::TestCase
     assert_containers([["foo1"], ["foo2"]], "foo1 foo2")
 
     # automatically find super containers
-    assert_containers([["tag3", "subtag31"]], "sub")
+    assert_containers([["tag3", "subtag31"]], "subtag")
 
     # with quotes and escape
-    str = 'no\\ match "pseudo contain"er "with quotes" "s \\"tst'
+    str = 'no\\ match "pseudo contain"er "with quotes" "sub \\"test'
     arr = [["no match"], ["pseudo container"], ["with quotes", "sub \"test\""]]
     assert_containers( arr, str )  
   end
