@@ -4,7 +4,7 @@ require_relative 'cfs_fuzzy_utils.rb'
 
 module CFS
   class FuzzyParser
-    def initialize db
+    def initialize db=CFS::Database.new
       @db = db
       process_db
     end 
@@ -59,8 +59,6 @@ module CFS
               # CASE 1.1.2: create PseudoContainer for $kw
               CFS::debug "Ambiguous result. Create PseudoContainer #{ks[i]}." 
               ps_c = CFS::PseudoContainer.new([ks[i]]) 
-              # TODO
-              # use fuzzy_include?
               cs << ps_c
               CFS::debug "Add #{ps_c.inspect}"
               c = []
@@ -124,6 +122,7 @@ module CFS
 
           bl.split(:comma).each {|c|
             # TODO
+            # super container, spelling mistake etc.
             c = CFS::Container.new c
             if l 
               l.add c

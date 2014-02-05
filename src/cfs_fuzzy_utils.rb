@@ -1,5 +1,3 @@
-# TODO sort fuzzy results by distance function
-
 module CFS
   class Container
 
@@ -15,7 +13,7 @@ module CFS
       until i == self.length
         break unless o[i]
 
-        is_prefix = self[i].index(o[i]) == 0
+        is_prefix = self[i].fuzzy_prefix? o[i]
         is_fuzzy = self[i].fuzzy_eql? o[i]
         unless is_prefix or is_fuzzy
           return false
@@ -26,13 +24,13 @@ module CFS
       true
     end
 
-    # input: "fo", [["tag", "foo"],["tag2, "foo"],["tag3", "bla"]]
+    # input: "fo", [["tag", "foo", "bar"],["tag2, "foo"],["tag3", "bla"]]
     # output: [["tag", "foo"],["tag2, "foo"]]
     def self.fuzzy_super_c c_str, cs
       r = []
       cs.each {|x|
         x.each_with_index {|x_i, i|
-          if x_i.fuzzy_eql? c_str
+          if x_i.fuzzy_eql? c_str or x_i.fuzzy_prefix? c_str
             r << x[0..i]
           end
         }
@@ -50,26 +48,31 @@ module CFS
 end
 
 class String
+  # TODO write more sophisticated distance function
+  
   def fuzzy_eql?(o)
     if self == o
       true
     else
+      # first char must always be equal
       return false if self[0] != o[0]
 
-      # difference between letter frequency at most 1
+      # heuristic for difference between letter frequency 
       h1 = self.char_freq
       h2 = o.char_freq
 
+      num = 0
       (h1.keys + h2.keys).each {|k|
         f1 = h1[k] || 0
         f2 = h2[k] || 0
-        return false if ((f1 - f2).abs > 1)
+        num += (f1 - f2).abs
       }
-      true
+      num <= 2
     end
   end
 
-  def fuzzy_include?(o)
+  def fuzzy_prefix?(o)
+    index(o) == 0 && (o.length >= 3)
   end
 
   def char_freq
