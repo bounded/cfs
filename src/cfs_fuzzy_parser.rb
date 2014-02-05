@@ -1,5 +1,6 @@
 require_relative 'cfs.rb'
-require_relative 'cfs_fuzzy_tokenizer.rb'
+require_relative 'cfs_fuzzy_parser_containers.rb'
+require_relative 'cfs_fuzzy_parser_literals.rb'
 require_relative 'cfs_fuzzy_utils.rb'
 
 module CFS
@@ -22,75 +23,6 @@ module CFS
       @info = {
         :cs => cs
       }
-    end
-
-    def containers s
-      CFS::debug "\n### FuzzyParser.containers #{s}"
-
-      cs = Set.new
-      c = CFS::Container.new 
-
-      ks = CFS::FuzzyParser.tokenize_containers s
-      CFS::debug "Tokenized: #{ks.inspect}"
-      i = 0
-
-      while i < ks.length
-        # create new container by adding another keyword
-        cn = CFS::Container.new (c + [ks[i]])
-
-        # check whether this matches an existing container
-        CFS::debug "match #{cn.inspect}"
-        ms = CFS::Container.fuzzy_match_c cn, @info[:cs]
-        CFS::debug "result: #{ms}"
-
-        if ms.empty?
-          # CASE 1: No matches
-          if cn.length == 1
-            # CASE 1.1: Only one keyword $kw
-            
-            # CASE 1.1.1: check for a container $c1 ... $cn $kw
-            sup_cs = CFS::Container.fuzzy_super_c ks[i], @info[:cs]
-            CFS::debug "Possible super containers: #{sup_cs}."
-            
-            if sup_cs.length == 1
-              CFS::debug "Use container #{sup_cs[0]}." 
-              c = sup_cs[0]
-            else
-              # CASE 1.1.2: create PseudoContainer for $kw
-              CFS::debug "Ambiguous result. Create PseudoContainer #{ks[i]}." 
-              ps_c = CFS::PseudoContainer.new([ks[i]]) 
-              cs << ps_c
-              CFS::debug "Add #{ps_c.inspect}"
-              c = []
-            end
-          else
-            # CASE 1.2: backtrack and use the last successful container
-            cs << c
-            CFS::debug "add #{c.inspect}"
-            c = []
-            # process the current keyword again
-            i -= 1
-          end
-        elsif ms.length > 1
-          # CASE 2: More than one match
-          # Inform the user and take the best match
-          CFS::debug "Ambiguous input #{ks[i]}."
-          CFS::debug "Choose #{ms[0].inspect}."
-          c = ms[0]
-        else
-          # CASE 3: One match
-          c = ms[0]
-        end
-
-        i += 1
-      end
-
-      unless c.empty?
-        cs << c 
-        CFS::debug "add #{c.inspect}"
-      end
-
-      cs
     end
 
     # returns CFS::Database
@@ -137,6 +69,67 @@ module CFS
       }
 
       r
+    end
+
+    # Canonical representation of a database
+    # in the sense that the produced string
+    # can be unambiguously transformed back
+    # into a database using #literals
+    
+    def self.canonical_str s
+        tmp = s.gsub(/"/, '\\"').gsub(/'/, "\\'").gsub(/\\/, "\\\\")
+        if [',', ':', ' ', "\n"].any? {|x| s.include? x}
+          tmp = '"' + tmp + '"'
+        end
+        tmp 
+    end
+
+    def self.canonical db
+      db.map {|l|
+        containers.map{|x| 
+          canonical_str x
+        }.cs.join(", ") + ": " + (canonical_str l)
+      } 
+    end
+  end
+end
+
+class String
+  
+  # input: a" b c\": hell"o.mat_quotes! /[ :]/
+  # output: a\ b\ c":\ hello
+  def materialize_quotes! r_escape
+    i = 0
+    in_q = false
+    q_type = nil
+
+    while i < length
+      if in_q 
+        if self[i] == q_type 
+          if i != 0 and self[i-1] == "\\"
+            self[i-1] = ""
+          else
+            in_q = false
+            q_type = nil
+            self[i] = ""
+          end
+        elsif self[i] =~ r_escape
+          self[i] = '\\' + self[i]
+          i += 2
+        else
+          i += 1
+        end
+      elsif ['"', "'"].include?(self[i]) 
+        if i != 0 and self[i-1] == "\\"
+          self[i-1] = ""
+        else
+          in_q = true
+          q_type = self[i]
+          self[i] = ""
+        end
+      else
+        i += 1
+      end
     end
   end
 end

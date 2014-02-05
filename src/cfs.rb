@@ -88,7 +88,12 @@ module CFS
     end
 
     def to_s
-      containers_s + ": " + self
+      l = self
+      if self.length > 25
+        l = self[0..22] + "..."
+      end
+      l.gsub!(/\n/, '\\n')
+      containers_s + ": " + l
     end
   end
 
