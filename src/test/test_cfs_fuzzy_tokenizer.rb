@@ -47,6 +47,10 @@ class TestCFSTokenizerSingleline < Test::Unit::TestCase
     str = '  '
     arr = []
     assert_tokenize(arr, str)
+
+    str = ''
+    arr = []
+    assert_tokenize(arr, str)
   end
 
 end

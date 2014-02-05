@@ -97,6 +97,7 @@ module CFS
     def literals s
       tks = CFS::FuzzyParser.tokenize_literals s
       r = CFS::Database.new
+      return r if s.empty?
 
       top_cs = []
 
@@ -105,7 +106,7 @@ module CFS
           # literal
           
           l = CFS::Literal.new bl[0]
-          l.container = top_cs
+          l.containers = top_cs
           r.add l
         else 
           # tag1, tag2:

@@ -1,0 +1,20 @@
+#! /bin/bash
+
+DB_PATH=~/.cfs_db
+APP_PATH=main.rb
+
+if [ $# = 0 ]; then
+  ruby $APP_PATH $DB_PATH a
+elif [ "$1" = "-e" ]; then
+  read query
+  rm -f .cfs_tmp
+  ruby $APP_PATH $DB_PATH c "$query" > .cfs_tmp
+  vim .cfs_tmp
+  ruby $APP_PATH $DB_PATH e "$query" < .cfs_tmp
+elif [ "$1" = "-q" ]; then
+  read query
+  ruby $APP_PATH $DB_PATH q "$query"
+else
+  echo "Usage: cfs -[q|e]"
+fi
+

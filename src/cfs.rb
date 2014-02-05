@@ -34,8 +34,7 @@ module CFS
     end
 
     def to_s
-      # TODO: tree
-      map{|x| x.to_s + " " + x.containers_s }.join "\n"
+      map{|x| x.to_s }.join "\n"
     end
 
     def inspect
@@ -81,11 +80,15 @@ module CFS
     end
 
     def containers_s
-      "[" + @containers.map{|c| c.to_s}.join(", ") + "]"
+      containers.map{|y| y.join}.join ", "
     end
 
     def eql?(o)
       self == o && containers == o.containers
+    end
+
+    def to_s
+      containers_s + ": " + self
     end
   end
 
