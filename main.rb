@@ -6,13 +6,17 @@ if ARGV.length == 0
 end
 
 # Load database
-db_path = ARGV[0]
+db_path = File.expand_path ARGV[0]
 
 db_data = nil
 begin
-  db_data = File.read db_path
-rescue
-  puts "Invalid database path."
+  if File.exists? db_path
+    db_data = File.read db_path
+  else
+    db_data = ""
+  end
+rescue e
+  puts "Error: #{e}"
   exit
 end
 
