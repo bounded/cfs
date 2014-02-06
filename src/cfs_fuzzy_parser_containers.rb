@@ -6,7 +6,7 @@ module CFS
     def containers s
       CFS::debug "\n### FuzzyParser.containers #{s}"
 
-      ks = parse_containers s
+      ks = tokenize_containers s
       CFS::debug "Parsed: #{ks.inspect}"
 
       cs = Set.new
@@ -74,7 +74,33 @@ module CFS
     end
 
     def tokenize_containers s
+      s.materialize_quotes! /\s/
       r = []
+      acc = ""
+      escape_next = false
+
+      s.each_char {|c|
+        if escape_next
+          escape_next = false
+          acc << c
+          next
+        end
+
+        if c == '\\'
+          escape_next = true
+          next
+        end
+
+        if c =~ /\s/
+          r << acc unless acc.empty?
+          acc = ""
+        else
+          acc << c
+        end
+      }
+
+      r << acc unless acc.empty?
+      r
     end
   end
 end

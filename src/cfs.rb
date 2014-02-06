@@ -2,7 +2,7 @@ require 'set'
 
 module CFS
 
-  WHITESPACE = /[ \t]/
+  DEBUG = false
 
   class Database < Set
     alias :set_add :add
@@ -163,8 +163,6 @@ module CFS
       false
     end
   end
-
-  DEBUG = false
 
   def self.debug str
     puts str if DEBUG

@@ -26,6 +26,7 @@ module CFS
     end
 
     # returns CFS::Database
+=begin
     def literals s
       tks = CFS::FuzzyParser.tokenize_literals s
       r = CFS::Database.new
@@ -70,6 +71,7 @@ module CFS
 
       r
     end
+=end
 
     # Canonical representation of a database
     # in the sense that the produced string
