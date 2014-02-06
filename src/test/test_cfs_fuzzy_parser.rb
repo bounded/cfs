@@ -76,3 +76,28 @@ end
     assert_equal(CFS::Database.by_hash(exp), @parser.literals(input))
   end
 end
+
+class TestCFSFuzzyParserCanonical < Test::Unit::TestCase
+
+  def test_1
+    db = CFS::Database.by_hash ({
+      "very long\nliteral" => ([
+        ["tag1"],
+        ["tag2"],
+        ["tag3", "subtag31"],
+        ["with quotes", 'sub "test"'],
+       ])
+    })
+
+    str = <<END
+tag1, tag2, tag3 subtag31, "with quotes" "sub \\"test\\"": 
+very long
+literal
+END
+    str = str[0..-2]
+    out = (CFS::FuzzyParser.canonical db)
+
+    puts out
+    assert_equal str, out
+  end
+end

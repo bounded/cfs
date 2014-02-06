@@ -63,7 +63,9 @@ module CFS
     end
 
     def add c
-      @containers << c if @containers.all? {|x| !(x.implies? c)}
+      unless c.is_omega?
+        @containers << c if @containers.all? {|x| !(x.implies? c)}
+      end
     end
 
     def in? c
@@ -90,9 +92,9 @@ module CFS
     def to_s
       l = self
       if self.length > 25
-        l = self[0..22] + "..."
+        l = self[0..22] + "[...]"
       end
-      l.gsub!(/\n/, '\\n')
+      l = l.gsub(/\n/, '\\n')
       containers_s + ": " + l
     end
   end
@@ -125,6 +127,10 @@ module CFS
 
     def depth
       length
+    end
+
+    def is_omega?
+      length == 0
     end
 
     alias :arr_eql :==

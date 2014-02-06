@@ -25,7 +25,7 @@ fuzzy_parser.db = db
 
 # Check switches
 switch = ARGV[1]
-unless ["c", "q", "a", "e"].include? switch
+unless ["q", "a", "e"].include? switch
   puts "Invalid switch passed. Use [a]dd, [q]uery or [e]dit."
   exit
 end
@@ -43,6 +43,7 @@ when "a"
   add = ""
   f = ""
   add += f while f = $stdin.gets
+
   add_db = fuzzy_parser.literals add
   exit if add_db.empty?
 
@@ -53,19 +54,12 @@ when "a"
   db += add_db
 
   File.open(db_path, "w") {|f|
-    f.print (CFS::FuzzyParser.canonical db)
+    f.puts (CFS::FuzzyParser.canonical db)
   }
 
 when "q"
   unless query
     puts "Switch [q]uery needs a query."
-    exit
-  end
-  puts db.filter(fuzzy_parser.containers query)
-
-when "c"
-  unless query
-    puts "Switch [c]anonical needs a query."
     exit
   end
   puts CFS::FuzzyParser.canonical(db.filter(fuzzy_parser.containers query))
@@ -83,7 +77,7 @@ when "e"
   rpl = ""
   f = ""
   rpl += f while f = $stdin.gets
-  rpl_db = CFS::FuzzyParser.literals rpl
+  rpl_db = fuzzy_parser.literals rpl
 
   db_rem = q_db - rpl_db
   unless db_rem.empty?

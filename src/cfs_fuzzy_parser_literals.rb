@@ -11,15 +11,22 @@ module CFS
       (tok.split :break).each {|t|
         if t.include? :colon
           l = CFS::Literal.new t.pop
+          # remove :colon
           t.pop
 
           cs = t.split(:comma).map {|arr|
             CFS::Container.new arr
           }
           l.containers = cs
-          db.add l
+          CFS::debug "Add literal #{l.inspect}"
         else
-          db.add (CFS::Literal.new t[0]) unless t.empty?
+          unless t.empty?
+            l = CFS::Literal.new t[0]
+          end
+        end
+        if l
+          CFS::debug "Add literal #{l.inspect}"
+          db.add l
         end
       }  
       db
@@ -28,13 +35,14 @@ module CFS
     # output: ["tag1", :comma, "tag2", :colon, "literal"]
     def self.tokenize_literals s
       CFS::debug "Tokenize: #{s}"
+      s.strip!
       s.materialize_quotes! /[: ,]/
       r = []
       tmp = s.split("\n")
 
       until tmp.empty?
         k = [tmp.shift]
-        i = tmp.index{|x| x =~ /[^\\]:/} || tmp.length
+        i = tmp.index{|x| x =~ /[^\\]:|\A:/} || tmp.length
         k = k.concat tmp.shift(i) 
         r << k.join("\n")
       end
@@ -99,6 +107,7 @@ module CFS
 
       }
 
+      # remove :break
       r.pop
 
       if !r.include? :colon

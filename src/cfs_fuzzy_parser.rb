@@ -5,8 +5,13 @@ require_relative 'cfs_fuzzy_utils.rb'
 
 module CFS
   class FuzzyParser
-    def initialize db=CFS::Database.new
+    def initialize data=CFS::Database.new
+      self.db = data
+    end 
+
+    def db=(db)
       @db = db
+      process_db
     end 
 
     def process_db
@@ -24,11 +29,6 @@ module CFS
       }
     end
 
-    def db=(db)
-      @db = db
-      process_db
-    end 
-
     # Canonical representation of a database
     # in the sense that the produced string
     # can be unambiguously transformed back
@@ -39,12 +39,14 @@ module CFS
         l_esc = l.escape ['"', "'", '\\', ':', ',']
         
         cs_esc = l.containers.map{|x| 
-          x_esc = x.join(" ").escape ['"', "'"]
-          if ['\\', ':', ','].any? {|y| x.include? y}
-            '"' + x_esc + '"'
-          else
-            x_esc
-          end
+          x.map{|y|
+            y_esc = y.escape ['"', "'"]
+            if ['\\', ' ', ':', ','].any? {|z| y.include? z}
+              '"' + y_esc + '"'
+            else
+              y_esc
+            end
+          }.join " "
         }
         
         cs_str = cs_esc.join(", ") + ": " 

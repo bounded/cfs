@@ -8,9 +8,10 @@ if [ $# = 0 ]; then
 elif [ "$1" = "-e" ]; then
   read query
   rm -f .cfs_tmp
-  ruby $APP_PATH $DB_PATH c "$query" > .cfs_tmp
+  ruby $APP_PATH $DB_PATH q "$query" > .cfs_tmp
   vim .cfs_tmp
   ruby $APP_PATH $DB_PATH e "$query" < .cfs_tmp
+  rm -f .cfs_tmp
 elif [ "$1" = "-q" ]; then
   read query
   ruby $APP_PATH $DB_PATH q "$query"
