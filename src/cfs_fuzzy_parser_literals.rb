@@ -1,27 +1,32 @@
-require_relative 'cfs_fuzzy_parser.rb'
+require_relative 'cfs.rb'
 
 module CFS
   class FuzzyParser
 
     def literals s
-      tok = tokenize_literals s
+      tok = CFS::FuzzyParser.tokenize_literals s
       CFS::debug "Tokenized: #{tok}"
       db = CFS::Database.new
-      tok.each {|t|
-        l = CFS::Literal.new t.pop
-        t.pop
 
-        cs = t.split(:comma).map {|arr|
-          CFS::Container.new arr
-        }
-        l.containers = cs
-        db.add l
+      (tok.split :break).each {|t|
+        if t.include? :colon
+          l = CFS::Literal.new t.pop
+          t.pop
+
+          cs = t.split(:comma).map {|arr|
+            CFS::Container.new arr
+          }
+          l.containers = cs
+          db.add l
+        else
+          db.add (CFS::Literal.new t[0]) unless t.empty?
+        end
       }  
       db
     end
 
-    # output: [["tag1", :comma, "tag2", :colon, "literal"]]
-    def tokenize_literals s
+    # output: ["tag1", :comma, "tag2", :colon, "literal"]
+    def self.tokenize_literals s
       CFS::debug "Tokenize: #{s}"
       s.materialize_quotes! /[: ,]/
       r = []
@@ -35,10 +40,11 @@ module CFS
       end
 
       CFS::debug "Subresult: #{r}"
+      tmp = r
+      r = []
 
-      r.map {|x|
+      tmp.each {|x|
 
-        x_r = []
         acc = ""
         escape_next = false
         in_literal = false
@@ -57,31 +63,50 @@ module CFS
             if in_literal
               acc << c unless acc.empty?
             else
-              x_r << acc unless acc.empty?
+              r << acc unless acc.empty?
               acc = ""
             end
           when ','
             if in_literal
               acc << ','
             else
-              x_r << acc unless acc.empty?
-              acc = ""
-              x_r << :comma
+              if !acc.empty? 
+                r << acc 
+                acc = ""
+              end
+              if (!r.empty? && r.last != :comma)
+                r << :comma
+              end
             end
           when ':'
-            in_literal = true
-            x_r << acc unless acc.empty?
-            acc = ""
-            x_r << :colon
+            if in_literal
+              acc << ':'
+            else
+              in_literal = true
+              r << acc unless acc.empty?
+              r.pop if r.last == :comma
+              acc = ""
+              r << :colon
+            end
           else
             acc << c
           end
         }
 
-        x_r << acc.chomp
-        x_r
+        acc.strip!
+        r << acc unless acc.empty?
+        r << :break unless r.empty?
 
-      } 
+      }
+
+      r.pop
+
+      if !r.include? :colon
+        s.empty? ? [] : [s]
+      else
+        r
+      end
+
     end
   end
 end

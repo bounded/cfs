@@ -168,14 +168,3 @@ module CFS
     puts str if DEBUG
   end
 end
-
-class Array
-  def split obj
-    i = index obj
-    if i == nil
-      [self]
-    else
-      [self[0..i-1]] + self[i+1..-1].split(obj)
-    end
-  end
-end

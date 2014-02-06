@@ -1,5 +1,5 @@
 require 'test/unit' 
-require '../cfs_fuzzy_tokenizer.rb'
+require '../cfs_fuzzy_parser.rb'
 
 module TestCFSTokenizerHelper
   def assert_tokenize exp, input
@@ -25,27 +25,28 @@ class TestCFSTokenizerSingleline < Test::Unit::TestCase
 
   def test_single_space
     str = ',,,  the  se , a re,, ""  ,,: ma  ny "bl  ank"s'
-    arr = ['the', 'se', :comma, 'a', 're',  :colon, "ma  ny \"bl  ank\"s"]
+    arr = ['the', 'se', :comma, 'a', 're',  :colon, "ma  ny bl  anks"]
     assert_tokenize(arr, str)
   end
 
   def test_single_quote
     str = '"Test some , : \" stuff" ":more", t"e:\"st" : n"o :,"'
-    arr = ['Test some , : " stuff', ':more', :comma, 'te:"st', :colon, 'n"o :,"']
+    arr = ['Test some , : " stuff', ':more', :comma, 'te:"st', :colon, 'no :,']
     assert_tokenize(arr, str)
   end
 
   def test_single_special
     str = "literal:"
-    arr = ['literal:']
+    arr = ['literal', :colon]
     assert_tokenize arr, str
 
+    # empty literal without containers
     str = ":"
-    arr = [':']
+    arr = [:colon]
     assert_tokenize arr, str
 
     str = '  '
-    arr = []
+    arr = ['  ']
     assert_tokenize(arr, str)
 
     str = ''
@@ -66,14 +67,14 @@ stretched across multiple lines
 
 another literal
 END
-    arr = ["tag1", :comma, "tag", "2", :comma, "tag3", :colon, "some literal\nstretched across multiple lines", :break, "another literal"]
+    arr = ["tag1", :comma, "tag", "2", :comma, "tag3", :colon, "some literal\nstretched across multiple lines\n\nanother literal"]
     assert_tokenize arr, str
 
     str = <<END
 Some simple literal ... 
 ... continuing here
 END
-    arr = ["Some simple literal ... \n... continuing here"]
+    arr = ["Some simple literal ... \n... continuing here\n"]
     assert_tokenize(arr, str)
 
     # test: one tag and one literal in new line
@@ -90,7 +91,22 @@ tag1:
 
 Some literal.
 END
-    arr = ['tag1', :colon, :break, 'Some literal.']
+    arr = ['tag1', :colon, 'Some literal.']
+    assert_tokenize(arr, str)
+
+    str = <<END
+tag1,tag2: start literal:
+Now: I will use another, one    
+example that is : 
+a lot longer.
+   
+  
+now:   
+after the newline
+  
+END
+    arr = ['tag1', :comma, 'tag2', :colon, "start literal:", :break, "Now", :colon, "I will use another, one", :break, "example", "that", "is", :colon, "a lot longer.", :break, 'now', :colon, 'after the newline']
+
     assert_tokenize(arr, str)
   end
 
@@ -101,25 +117,8 @@ literals\\
   
 multiline yeah!
 END
-    arr = ['tag1', :comma, "Long \"Tag", :comma, 'other', 'tag', :colon, "here \"\"\"are \\some\nliterals\n  \nmultiline yeah!"]
+    arr = ['tag1', :comma, "Long \"Tag", :comma, 'other', 'tag', :colon, "here \"are \\some\nliterals\n  \nmultiline yeah!"]
     assert_tokenize arr, str
-  end
-
-  def test_implicit_escape
-    str = <<END
-tag1,tag2: start literal:
-Now: I will use many, many 
-characters that usually: need
-to be escaped.
-   
-  
-now:   
-after the newline, they should no longer be escaped
-  
-END
-    arr = ['tag1', :comma, 'tag2', :colon, "start literal:\nNow: I will use many, many \ncharacters that usually: need\nto be escaped.", :break, 'now', :colon, 'after the newline, they should no longer be escaped']
-
-    assert_tokenize(arr, str)
   end
 
   def test_space
@@ -139,46 +138,20 @@ END
     
     # test: literals containing newlines
     str = <<END
-tag1, ab:
+tag1, ab:  
+tag2, ab:   
 
 tag1, tag2: Literal 1 start. continues...
-... and ends
+... 
 
-Literal2, start
-Literal2, end
+still the same literal
 
-Literal3
-
-Literal"4
+still ... "4
  
    
-... and interrupted"
+... and finished"
 END
-    arr = ['tag1', :comma, 'ab', :colon, :break, 'tag1', :comma, 'tag2', :colon, "Literal 1 start. continues...\n... and ends", :break, "Literal2, start\nLiteral2, end", :break, 'Literal3', :break, "Literal\"4", :break, "... and interrupted\""]
-    assert_tokenize(arr, str)
-  end
-
-  def test_no_newline
-    # test: no newline at the end
-    str = <<END
-Some literal
-  
-these aren't \\:tags
-END
-    # remove newline
-    str = str[0..str.length-2]
-    arr = ['Some literal',:break, 'these aren\'t \\:tags']
-    assert_tokenize(arr, str)
-
-    # test: no newline at the end, with tags
-    str = <<END
-Some literal
-  
-these, are: tags
-END
-    # remove newline
-    str = str[0..str.length-2]
-    arr = ['Some literal',:break, 'these', :comma, 'are', :colon, 'tags']
+    arr = ['tag1', :comma, 'ab', :colon, :break, 'tag2', :comma, 'ab', :colon, :break, 'tag1', :comma, 'tag2', :colon, "Literal 1 start. continues...\n... \n\nstill the same literal\n\nstill ... 4\n \n   \n... and finished"]
     assert_tokenize(arr, str)
   end
 end
@@ -188,26 +161,26 @@ class TestCFSTokenizerContainers < Test::Unit::TestCase
   def test_simple
     str = 'some easy query'
     arr = ['some', 'easy', 'query']
-    assert_literals arr, str
+    assert_containers arr, str
 
     str = "now with newline\n"
     arr = ['now', 'with', 'newline']
-    assert_literals arr, str
+    assert_containers arr, str
 
     str = 'tr"y" "s"o"me" "qu otes"'
     arr = ['try', 'some', 'qu otes']
-    assert_literals arr, str
+    assert_containers arr, str
 
     str = "now\\ with\\ \\\"a \\\\bunch of es\\\"capes"
     arr = ['now with "a', '\\bunch', 'of', 'es"capes']
-    assert_literals arr, str
+    assert_containers arr, str
 
     str = "   and  some\\  \\ ex tra  spaces \\ "
     arr = ['and', 'some ', ' ex', 'tra', 'spaces', ' ']
-    assert_literals arr, str
+    assert_containers arr, str
   end
 
-  def assert_literals exp, input
+  def assert_containers exp, input
     assert_equal(exp, CFS::FuzzyParser.tokenize_containers(input))
   end
 

@@ -7,7 +7,6 @@ module CFS
   class FuzzyParser
     def initialize db=CFS::Database.new
       @db = db
-      process_db
     end 
 
     def process_db
@@ -25,79 +24,50 @@ module CFS
       }
     end
 
-    # returns CFS::Database
-=begin
-    def literals s
-      tks = CFS::FuzzyParser.tokenize_literals s
-      r = CFS::Database.new
-      return r if s.empty?
-
-      top_cs = []
-
-      tks.split(:break).each {|bl|
-        if bl.length == 1
-          # literal
-          
-          l = CFS::Literal.new bl[0]
-          l.containers = top_cs
-          r.add l
-        else 
-          # tag1, tag2:
-          # or 
-          # tag1, tag2: literal
-          
-          l = bl.pop
-          if l == :colon
-            l = nil
-          else
-            l = CFS::Literal.new l
-            bl.pop
-          end
-
-          bl.split(:comma).each {|c|
-            # TODO
-            # super container, spelling mistake etc.
-            c = CFS::Container.new c
-            if l 
-              l.add c
-            else
-              top_cs << c
-            end
-          }
-
-          r.add l if l
-        end
-      }
-
-      r
-    end
-=end
+    def db=(db)
+      @db = db
+      process_db
+    end 
 
     # Canonical representation of a database
     # in the sense that the produced string
     # can be unambiguously transformed back
     # into a database using #literals
-    
-    def self.canonical_str s
-        tmp = s.gsub(/"/, '\\"').gsub(/'/, "\\'").gsub(/\\/, "\\\\")
-        if [',', ':', ' ', "\n"].any? {|x| s.include? x}
-          tmp = '"' + tmp + '"'
-        end
-        tmp 
-    end
 
     def self.canonical db
       db.map {|l|
-        containers.map{|x| 
-          canonical_str x
-        }.cs.join(", ") + ": " + (canonical_str l)
-      } 
+        l_esc = l.escape ['"', "'", '\\', ':', ',']
+        
+        cs_esc = l.containers.map{|x| 
+          x_esc = x.join(" ").escape ['"', "'"]
+          if ['\\', ':', ','].any? {|y| x.include? y}
+            '"' + x_esc + '"'
+          else
+            x_esc
+          end
+        }
+        
+        cs_str = cs_esc.join(", ") + ": " 
+        if l_esc.include? "\n" 
+          cs_str + "\n" + l_esc
+        else
+          cs_str + l_esc
+        end
+      }.join "\n" 
     end
   end
 end
 
 class String
   
+  def escape arr
+    r = self
+    arr.each {|x| 
+      r = r.gsub(x, '\\' + x)
+    }
+    r
+  end
+
   # input: a" b c\": hell"o.mat_quotes! /[ :]/
   # output: a\ b\ c":\ hello
   def materialize_quotes! r_escape
@@ -132,6 +102,17 @@ class String
       else
         i += 1
       end
+    end
+  end
+end
+
+class Array
+  def split obj
+    i = index obj
+    if i == nil
+      [self]
+    else
+      [self[0..i-1]] + self[i+1..-1].split(obj)
     end
   end
 end

@@ -50,8 +50,6 @@ class TestCFSFuzzyParserLiterals < Test::Unit::TestCase
 
   def test_simple
     str = <<END
-super_tag1:
-
 tag1, tag2:
 Some literal.
 

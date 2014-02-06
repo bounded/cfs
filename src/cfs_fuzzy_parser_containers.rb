@@ -1,4 +1,4 @@
-require_relative 'cfs_fuzzy_parser.rb'
+require_relative 'cfs.rb'
 
 module CFS
   class FuzzyParser
@@ -6,7 +6,7 @@ module CFS
     def containers s
       CFS::debug "\n### FuzzyParser.containers #{s}"
 
-      ks = tokenize_containers s
+      ks = CFS::FuzzyParser.tokenize_containers s
       CFS::debug "Parsed: #{ks.inspect}"
 
       cs = Set.new
@@ -73,7 +73,7 @@ module CFS
       cs
     end
 
-    def tokenize_containers s
+    def self.tokenize_containers s
       s.materialize_quotes! /\s/
       r = []
       acc = ""

@@ -1,4 +1,3 @@
-require_relative './src/cfs_ioparser.rb'
 require_relative './src/cfs_fuzzy_parser.rb'
 
 if ARGV.length == 0
@@ -20,8 +19,9 @@ rescue e
   exit
 end
 
-db = CFS::IOParser.read db_data
-fuzzy_parser = CFS::FuzzyParser.new db
+fuzzy_parser = CFS::FuzzyParser.new 
+db = fuzzy_parser.literals db_data
+fuzzy_parser.db = db
 
 # Check switches
 switch = ARGV[1]
@@ -53,7 +53,7 @@ when "a"
   db += add_db
 
   File.open(db_path, "w") {|f|
-    f.print (CFS::IOParser.write db)
+    f.print (CFS::FuzzyParser.canonical db)
   }
 
 when "q"
@@ -68,7 +68,7 @@ when "c"
     puts "Switch [c]anonical needs a query."
     exit
   end
-  puts CFS::IOParser.write(db.filter(fuzzy_parser.containers query))
+  puts CFS::FuzzyParser.canonical(db.filter(fuzzy_parser.containers query))
   
 when "e"
   unless query
@@ -83,7 +83,7 @@ when "e"
   rpl = ""
   f = ""
   rpl += f while f = $stdin.gets
-  rpl_db = CFS::IOParser.read rpl
+  rpl_db = CFS::FuzzyParser.literals rpl
 
   db_rem = q_db - rpl_db
   unless db_rem.empty?
@@ -107,6 +107,6 @@ when "e"
   db += db_add
 
   File.open(db_path, "w") {|f|
-    f.print (CFS::IOParser.write db)
+    f.print (CFS::FuzzyParser.canonical db)
   }
 end
