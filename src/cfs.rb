@@ -82,7 +82,7 @@ module CFS
     end
 
     def containers_s
-      containers.map{|y| y.join}.join ", "
+      containers.map{|y| y.join " "}.join ", "
     end
 
     def eql?(o)

@@ -1,7 +1,9 @@
 #! /bin/bash
 
-DB_PATH=~/.cfs_db
+DB_PATH="$1"
 APP_PATH=main.rb
+
+shift
 
 if [ $# = 0 ]; then
   ruby $APP_PATH $DB_PATH a
