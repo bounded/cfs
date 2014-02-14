@@ -7,14 +7,27 @@ module CFS
     end
 
     def database str
-      arr = tokenize str, ({
+      tss = tokenize str, ({
         ',' => :comma,
         ':' => :colon,
         "\n" => :newline
-      })
+      }
+      
+      tss = tss.split(:newline).map {|ts|
+        if ts.empty? or (ts.length == 1 and ts[0] =~ /[\s]*/)
+          [:EMPTY]
+        else
+
+        end
+      }
+      
     end
 
     def query str
+
+    end
+
+    def self.canonical db
 
     end
 
