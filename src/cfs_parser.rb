@@ -1,144 +1,76 @@
+require 'parslet'
 require_relative 'cfs.rb'
 
 module CFS
+  class CFSParser < Parslet::Parser
+    rule(:v) {
+      match('[^:,()]').repeat(1).as(:v)
+    }
+    rule(:s) { 
+      v >> str(':') >> s.as(:s) |
+      str('(') >> s.as(:s) >> (str(',') >> s.as(:s)).repeat >> str(')') |
+      str('(') >> s >> str(')') |
+      v
+    }
+    root(:s)
+  end
+  class CFSTransform < Parslet::Transform
+    rule(:v => simple(:val)) {
+      CFS::Container.new val.to_s
+    }
+    rule({:v => simple(:val), :s => simple(:c)}){
+      if c.name
+        r = CFS::Container.new val.to_s
+        r.add c
+        r
+      else
+        c.name = val.to_s
+        c
+      end
+    } 
+    rule(:s => simple(:c)) {
+      c
+    }
+    rule({:v => simple(:val), :s => sequence(:arr)}) {
+      r = CFS::Container.new val.to_s
+      arr.each {|x| 
+        r.add x
+      } 
+      r
+    }
+  end
   class Parser
-    def initialize db=CFS::Database.new
-      @db = db
-    end
-
-    def database str
-      tss = tokenize str, ({
-        ',' => :comma,
-        ':' => :colon,
-        "\n" => :newline
-      })
+    def self.parse str
+      # pre-processor
       
-      tss = tss.split :newline
+      c = CFS::Container.new
 
-
-      tss.map! {|ts|
-
-        if ts.length == 0
-          [:EMPTY]
-        elsif ts.length == 1
-          if ts[0] =~ /[\s]*/
-            [:EMPTY]
-          else
-            ts[0].strip!
-            if is_quoted ts[0]
-              [:LITERAL_QUOTED, ts[0]]
-            else
-              [:LITERAL, ts[0]]
-            end
-          end
-        else
-
-        prefix = ts.last == :colon or
-                 (ts.length > 1 && ts[-1] =~ /[\s]*/)
-
-        if prefix
-          [:PREFIX, ts]
-        else
-
-
-        ts_coms = ts.split :comma
-        ts_coms.map! {|ts_com|
-
-          ts_cols = ts_com.split :colon
-
-          ## TODO 
-          # wont work because parse_literal
-          # needs the context of the preivously
-          # parsed elements
-          #
-          # e.g. a:b:c
-          #
-          # b needs a
-          ts_cols.map! {|ts_col|
-              [parse_literal(ts_col[0])]
-          }
-          
-          ts_cols.flatten_by :colon
-        }
-        ts_coms.flatten_by :comma
-
-        end
-        end
-
+      str.lines.each {|l|
+        l.strip!
+        next if l =~ /^[\s]*$/
+        r = parse_line l
+        c.add r
       }
 
-      buffer = []
-      prefix = nil
-      result = CFS::Database.new
+      # post-processor
 
-      until tss.empty?
-        ts = tss.pop
-        
-        # prefix
-        # if prefix at the end => top node
-        
-        # empty line
-        
-        # literal ending with "..."
+      c
+    end
 
-        # other literals
+    def self.parse_line str
+      p = CFS::CFSParser.new
+      t = CFS::CFSTransform.new
+
+      r = p.parse str
+      r = t.apply r
+
+      if r.is_a? Array
+        tmp = CFS::Container.new
+        r.each {|x| tmp.add x}
+        r = tmp
       end
+      r
 
     end
-
-    def parse_literal l
-      l.strip!
-
-      q1 = l.first == '"' and l.last == '"'
-      q2 = l.first == "'" and l.last == "'"
-      if q1 or q2
-        l.materialize_quotes!
-      else
-        l.materialize_quotes!
-        return l
-        l_approx = find_approx_literal l
-        l = l_approx if l_approx
-
-        # TODO heuristic
-        unless l_approx and l.length >= 20
-          return nil
-        end
-      end
-
-      l
-    end
-
-    def query str
-
-    end
-
-    def self.canonical db
-
-    end
-
-    def self.tokenize str, rpl
-      
-    end
-
-  end
-end
-
-class Array
-  def split obj
-    i = index obj
-    if i == nil
-      [self]
-    else
-      [self[0..i-1]] + self[i+1..-1].split(obj)
-    end
-  end
-  def flatten_by obj
-    r = []
-    obj.each {|x|
-      r += x
-      r << obj
-    }
-    r.pop
-    r
   end
 end
