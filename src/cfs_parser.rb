@@ -15,16 +15,17 @@ module CFS
     root(:s)
   end
   class CFSTransform < Parslet::Transform
+
     rule(:v => simple(:val)) {
-      CFS::Container.new val.to_s
+      CFS::Container.new (CFS::Parser.process_value val)
     }
     rule({:v => simple(:val), :s => simple(:c)}){
       if c.name
-        r = CFS::Container.new val.to_s
+        r = CFS::Container.new (CFS::Parser.process_value val)
         r.add c
         r
       else
-        c.name = val.to_s
+        c.name = (CFS::Parser.process_value val)
         c
       end
     } 
@@ -32,18 +33,47 @@ module CFS
       c
     }
     rule({:v => simple(:val), :s => sequence(:arr)}) {
-      r = CFS::Container.new val.to_s
+      r = CFS::Container.new (CFS::Parser.process_value val)
       arr.each {|x| 
         r.add x
       } 
       r
     }
+    rule({:s => sequence(:arr)}) {
+      if arr.length == 1
+        arr[0]
+      else
+        r = CFS::Container.new
+        arr.each {|x|
+          r.add x
+        }
+        r
+      end
+    }
   end
   class Parser
     def self.parse str
-      # pre-processor
-      
       c = CFS::Container.new
+
+      # Pre-processing
+      
+      # a:
+      # b
+      # c
+      # =>
+      # a:b
+      # a:c
+      
+      # a:b, c:d
+      # => (a:b, c:d)
+      str = str.lines.map {|l|
+        l.strip!
+        if l.include? ','
+          "(" + l + ")"
+        else
+          l
+        end
+      }.join "\n"
 
       str.lines.each {|l|
         l.strip!
@@ -52,7 +82,7 @@ module CFS
         c.add r
       }
 
-      # post-processor
+      # minimalize TODO
 
       c
     end
@@ -71,6 +101,10 @@ module CFS
       end
       r
 
+    end
+    def self.process_value val
+      # post-processing
+      val.to_s.strip
     end
   end
 end

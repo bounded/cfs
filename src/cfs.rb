@@ -79,5 +79,70 @@ module CFS
       end
       @children << c
     end
+
+    def child
+      raise ArgumentError if @children.length != 1
+      @children.to_a[0]
+    end
+
+    def minimize
+      # partition in
+      # group 1: starts with a => recursive
+      # group 2: starts with b => recursive
+      # ...
+      # group n: remainder, stop 
+      #
+
+      r = CFS::Container.new @name
+
+      part = {}
+      @children.each {|c|
+        if c.name
+          if part[c.name]
+            part[c.name] << c
+          else
+            part[c.name] = [c]
+          end
+        else
+          r.add c.minimize
+        end
+      }
+
+      part.each_pair {|k, cs|
+        if cs.length == 1
+          r.add cs[0]
+          next
+        end
+
+        # cs contains k:a_1, k:a_2, ... , k:a_n
+        # create k:(a_1, a_2, ... , a_n)
+        
+        tmp = CFS::Container.new k
+        cs.each {|cs_i|
+          if cs_i.children.length == 1
+            tmp.add cs_i.child
+          end
+        }
+
+        if tmp.children.length > 0
+          tmp = tmp.minimize
+          r.add tmp
+        else
+          cs.each{|c_i| 
+            r.add c_i
+          }
+        end
+      }
+
+      if r.children.length == 1 and r.name == nil
+        r = r.child
+      end
+      r
+      
+    end
+
+    def empty?
+      @children.empty?
+    end
   end
 end

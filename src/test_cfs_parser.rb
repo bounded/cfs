@@ -52,7 +52,7 @@ class TestCFSParser < Test::Unit::TestCase
     # since S -> V | V:S
     # and V cannot contain any parentheses
     
-    r = p_l "(a:b:((c:(d,((e))))))"
+    r = p_l "(a:b:((c:((d,((e)))))))"
     e = c('a', [
           c('b', [
             c('c', [
