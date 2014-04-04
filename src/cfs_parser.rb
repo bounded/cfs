@@ -56,6 +56,7 @@ module CFS
       c = CFS::Container.new
 
       # Pre-processing
+      str = str.lines.map {|x| x.strip }.join("\n")
       
       # a:
       # b
@@ -63,6 +64,21 @@ module CFS
       # =>
       # a:b
       # a:c
+      tmp = str.split "\n"
+      tmp.each_with_index {|l,i|
+        if l =~ /^(.*:)[\s]*$/
+          prefix = $1
+          tmp[i] = ""
+          i += 1
+          while tmp[i]
+            break if tmp[i] =~ /^\s*$/
+            tmp[i] = prefix + tmp[i]  
+            i += 1
+          end 
+        end
+      }
+
+      str = tmp.join "\n"
       
       # a:b, c:d
       # => (a:b, c:d)
@@ -73,16 +89,16 @@ module CFS
         else
           l
         end
-      }.join "\n"
+      }.join("\n")
 
+      # Parse
+      
       str.lines.each {|l|
         l.strip!
         next if l =~ /^[\s]*$/
         r = parse_line l
         c.add r
       }
-
-      # minimalize TODO
 
       c
     end

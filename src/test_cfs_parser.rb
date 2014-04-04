@@ -67,19 +67,40 @@ class TestCFSParser < Test::Unit::TestCase
   def test_realistic_1
     r = p_l "( project:(cfs, version:1.01), todo:bug:(prio:2, desc:Crash, platform:Windows 7 64bit, processor:Intel))"
     e = c(nil, [
-         c(' project', [
+         c('project', [
            c('cfs'),
-           c(' version', [c('1.01')])
+           c('version', [c('1.01')])
          ] ),
-         c(' todo', [
+         c('todo', [
            c('bug', [
              c('prio', [c('2')]),
-             c(' desc', [c('Crash')]),
-             c(' platform', [c('Windows 7 64bit')]),
-             c(' processor', [c('Intel')])
+             c('desc', [c('Crash')]),
+             c('platform', [c('Windows 7 64bit')]),
+             c('processor', [c('Intel')])
            ] )
          ] ) 
     ] )
+
+    assert_equal r, e
+  end
+
+  def test_preprocessor
+    db_s =
+<<HERE
+    a, b
+
+    a: 
+    b
+    c
+
+    c:
+HERE
+    r = CFS::Parser.parse db_s    
+    e = c(nil, [
+          c(nil, [ c('a'), c('b') ]),
+          c('a', [ c('b') ]),
+          c('a', [ c('c') ])
+    ])
 
     assert_equal r, e
   end
