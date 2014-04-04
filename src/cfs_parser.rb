@@ -87,7 +87,7 @@ module CFS
           i += 1
           while tmp[i]
             break if tmp[i] =~ /^\s*$/
-            tmp[i] = prefix + tmp[i]  
+            tmp[i] = prefix + '(' + tmp[i] + ')'
             i += 1
           end 
         end

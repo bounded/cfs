@@ -27,9 +27,6 @@ class TestCFSContainer < Test::Unit::TestCase
 
       r1 = r1.minimize
 
-      puts r2.to_s
-      puts r1.to_s
-
       assert_equal(r2, r1)
     }
     

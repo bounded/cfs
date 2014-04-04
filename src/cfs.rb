@@ -73,6 +73,19 @@ module CFS
       end
     end
 
+    def to_pretty_s
+      if is_leaf?
+        @name
+      else
+        str1 = "(" + @children.map{|x| x.to_pretty_s}.join(", ") + ")"
+        if name == nil
+          str1
+        else
+          @name + ":" + (@children.length == 1 ? child.to_pretty_s : str1)
+        end
+      end
+    end
+
     def inspect
       "#<#{self.class}: (#{@name ? @name : "nil"}, [#{@children.map {|c| c.inspect}.join ", "}])>"
     end
@@ -147,6 +160,14 @@ module CFS
 
     def empty?
       @children.empty?
+    end
+
+    def dup
+      c = CFS::Container.new (@name ? @name.dup : nil)
+      @children.each {|x|
+        c.add x.dup
+      }
+      c
     end
   end
 end

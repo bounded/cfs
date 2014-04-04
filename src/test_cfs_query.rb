@@ -17,7 +17,7 @@ HERE
     @db = (CFS::Parser.parse db_s).minimize
   end
 
-  def _test_2
+  def test_2
     person = CFS::Parser.parse_line "person:(name:Max1, tel:1132413)"
     todo = CFS::Parser.parse_line "todo:(01/01/14, Do laundry)"
 
@@ -28,6 +28,28 @@ HERE
     assert_equal((person < book_g), false)
 
     assert_equal((todo < person_g), false)
+  end
+
+  def test_3
+    o1 = CFS::Parser.parse_line "(a,b,c)"
+    o2 = CFS::Parser.parse_line "(a,b:d,c)"
+    assert_equal(o1>o2 ,true)
+
+    o1 = CFS::Parser.parse_line "(a,b,c)"
+    o2 = CFS::Parser.parse_line "b:d"
+    assert_equal(o1>o2 ,false)
+
+    o1 = CFS::Parser.parse_line "p:(a,b,c)"
+    o2 = CFS::Parser.parse_line "p"
+    assert_equal(o1 < o2, true)
+
+    o1 = CFS::Parser.parse_line "b"
+    o2 = CFS::Parser.parse_line "(a,b)"
+    assert_equal(o2 < o1, true)
+
+    o1 = CFS::Parser.parse_line "a:b"
+    o2 = CFS::Parser.parse_line "a:(b,k)"
+    assert_equal(o2 < o1, true)
   end
 
   def test_1

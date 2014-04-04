@@ -124,7 +124,6 @@ HERE
           ]),
           c('t1')
     ])
-    puts e.to_s
 
     assert_equal r,e
   end
