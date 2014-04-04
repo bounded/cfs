@@ -15,6 +15,7 @@ class TestCFSContainer < Test::Unit::TestCase
       # (a:b, c:d:(e,f))
       # = (a:b, (c:d:e, c:d:f))
       # (!) = ((a:b, c:d:e), (a:b, c:d:f))
+      # thus, they need another distributive law!
       
       # ["((a:b,c:d:e),(a:b,c:d:f))", "(a:b,c:d:(e,f))"],
       # ["((a:b,c:d:e,c:d:z),(a:b,c:d:f))", "(a:b,c:d:((e,z),f))"]

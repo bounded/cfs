@@ -42,6 +42,10 @@ module CFS
       name != nil && @children.empty?
     end
 
+    def is_named?
+      !is_leaf? && name != nil
+    end
+
     def is_collection?
       !@children.empty?
     end
