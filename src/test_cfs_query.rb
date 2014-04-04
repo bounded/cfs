@@ -50,6 +50,10 @@ HERE
     o1 = CFS::Parser.parse_line "a:b"
     o2 = CFS::Parser.parse_line "a:(b,k)"
     assert_equal(o2 < o1, true)
+
+    o1 = CFS::Parser.parse_line "k"
+    o2 = CFS::Parser.parse_line "k:(b,a)"
+    assert_equal(o2 < o1, true)
   end
 
   def test_1
