@@ -4,8 +4,23 @@ require_relative 'cfs.rb'
 module CFS
   class CFSParser < Parslet::Parser
     rule(:v) {
-      match('[^:,()]').repeat(1).as(:v)
+      match('[^:,()"\']').repeat(1).as(:v) |
+
+      (
+        str("'") >> (
+          str('\\') >> any |
+          str("'").absent? >> any
+        ) .repeat(1).as(:v) >> str("'")
+      ) |
+
+      (
+        str('"') >> (
+          str('\\') >> any |
+          str('"').absent? >> any
+        ) .repeat(1).as(:v) >> str('"')
+      )
     }
+
     rule(:s) { 
       v >> str(':') >> s.as(:s) |
       str('(') >> s.as(:s) >> (str(',') >> s.as(:s)).repeat >> str(')') |

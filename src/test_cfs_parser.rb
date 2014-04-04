@@ -105,6 +105,30 @@ HERE
     assert_equal r, e
   end
 
+  def test_quotes
+    db_s = '"a"'
+    r = p_l db_s
+    e = c('a')
+    assert_equal r,e
+
+    db_s = '"a:b":c'
+    r = p_l db_s
+    e = c('a:b', [c('c')])
+    assert_equal r,e
+
+    db_s = '("(a:\\"b)":c:\'abc, def\', t1)'
+    r = p_l db_s
+    e = c(nil, [
+          c('(a:\\"b)', [
+            c('c', [ c('abc, def') ])
+          ]),
+          c('t1')
+    ])
+    puts e.to_s
+
+    assert_equal r,e
+  end
+
   def p_l str
     CFS::Parser.parse_line str
   end
